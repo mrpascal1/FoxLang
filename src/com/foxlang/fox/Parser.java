@@ -62,7 +62,7 @@ class Parser {
         List<Stmt.Function> classMethods = new ArrayList<>();
 
         while (!check(RIGHT_BRACE) && !isAtEnd()) {
-            boolean isClassMethod = match(CLASS);
+            boolean isClassMethod = match(STATIC);
             (isClassMethod ? classMethods : methods).add(function("method"));
         }
 
