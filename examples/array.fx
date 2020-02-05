@@ -1,7 +1,7 @@
-import "std:Random"
+import "std:Random";
 
-var names = ["Jim", "John", "Jack", "Jonah", "James"]
-names = names + "Jezza"
+var names = ["Jim", "John", "Jack", "Jonah", "James"];
+names = names + "Jezza";
 
-var index = Random.inRange(0, len(names) - 1)
-print(names[index])
+var index = Random.inRange(0, len(names) - 1);
+print(names[index]);
