@@ -1,5 +1,5 @@
 # Fox
-`Fox` is an **enhanced** implementation of Fox, written in Java.
+`Fox` is an **enhanced** implementation of lox, written in Java.
 
 ## Notable additions
 Along with the code in Crafting Interpreters, I've implemented:
