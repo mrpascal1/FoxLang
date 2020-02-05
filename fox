@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+java -cp out/production/fox/com/foxlang/fox com.foxlang.fox.Fox $@

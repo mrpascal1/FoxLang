@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="module_fox" default="compile.module.fox">
+  <dirname property="module.fox.basedir" file="${ant.file.module_fox}"/>
+  
+  <property name="module.jdk.home.fox" value="${project.jdk.home}"/>
+  <property name="module.jdk.bin.fox" value="${project.jdk.bin}"/>
+  <property name="module.jdk.classpath.fox" value="${project.jdk.classpath}"/>
+  
+  <property name="compiler.args.fox" value="-encoding UTF-8 -source 8 -target 8 ${compiler.args}"/>
+  
+  <property name="fox.output.dir" value="${module.fox.basedir}/out/production/fox"/>
+  <property name="fox.testoutput.dir" value="${module.fox.basedir}/out/test/fox"/>
+  
+  <path id="fox.module.bootclasspath">
+    <!-- Paths to be included in compilation bootclasspath -->
+  </path>
+  
+  <path id="fox.module.production.classpath">
+    <path refid="${module.jdk.classpath.fox}"/>
+  </path>
+  
+  <path id="fox.runtime.production.module.classpath">
+    <pathelement location="${fox.output.dir}"/>
+  </path>
+  
+  <path id="fox.module.classpath">
+    <path refid="${module.jdk.classpath.fox}"/>
+    <pathelement location="${fox.output.dir}"/>
+  </path>
+  
+  <path id="fox.runtime.module.classpath">
+    <pathelement location="${fox.testoutput.dir}"/>
+    <pathelement location="${fox.output.dir}"/>
+  </path>
+  
+  
+  <patternset id="excluded.from.module.fox">
+    <patternset refid="ignored.files"/>
+  </patternset>
+  
+  <patternset id="excluded.from.compilation.fox">
+    <patternset refid="excluded.from.module.fox"/>
+  </patternset>
+  
+  <path id="fox.module.sourcepath">
+    <dirset dir="${module.fox.basedir}">
+      <include name="src"/>
+    </dirset>
+  </path>
+  
+  
+  <target name="compile.module.fox" depends="compile.module.fox.production,compile.module.fox.tests" description="Compile module fox"/>
+  
+  <target name="compile.module.fox.production" depends="register.custom.compilers" description="Compile module fox; production classes">
+    <mkdir dir="${fox.output.dir}"/>
+    <javac2 destdir="${fox.output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}" fork="true" executable="${module.jdk.bin.fox}/javac">
+      <compilerarg line="${compiler.args.fox}"/>
+      <bootclasspath refid="fox.module.bootclasspath"/>
+      <classpath refid="fox.module.production.classpath"/>
+      <src refid="fox.module.sourcepath"/>
+      <patternset refid="excluded.from.compilation.fox"/>
+    </javac2>
+    
+    <copy todir="${fox.output.dir}">
+      <fileset dir="${module.fox.basedir}/src">
+        <patternset refid="compiler.resources"/>
+        <type type="file"/>
+      </fileset>
+    </copy>
+  </target>
+  
+  <target name="compile.module.fox.tests" depends="register.custom.compilers,compile.module.fox.production" description="compile module fox; test classes" unless="skip.tests"/>
+  
+  <target name="clean.module.fox" description="cleanup module">
+    <delete dir="${fox.output.dir}"/>
+    <delete dir="${fox.testoutput.dir}"/>
+  </target>
+</project>
