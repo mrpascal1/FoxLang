@@ -7,7 +7,6 @@ Along with the code in Crafting Interpreters, I've implemented:
 - References
 - Modules and imports
 - Standard library
-- Implicit semicolons
 - Multi-line comments (they can nest!)
 - Comma operator
 - Ternary (conditional) operator
