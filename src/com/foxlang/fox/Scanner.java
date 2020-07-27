@@ -81,9 +81,17 @@ class Scanner {
                     addToken(ARROW);
                     break;
                     //System.out.println("Arrow");
-                } else addToken(MINUS); break;
+                } else if(match('-')){
+                    addToken(DECREMENT);
+                    break;
+                }else addToken(MINUS); break;
             case '%': addToken(PERCENTAGE); break;
-            case '+': addToken(PLUS); break;
+            case '+':
+                if (match('+')){
+                    addToken(INCREMENT);
+                    break;
+                }else addToken(PLUS); break;
+
             case ';': addToken(SEMICOLON); break;
             case '*': addToken(STAR); break;
             case ':': addToken(COLON); break;

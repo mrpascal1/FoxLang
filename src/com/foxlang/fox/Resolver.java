@@ -185,6 +185,21 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
     }
 
     @Override
+    public Void visitDictionaryExpr(Expr.Dictionary expr) {
+        if (expr.key != null){
+            for (Expr keyPair : expr.key){
+                resolve(keyPair);
+            }
+        }
+        if (expr.value != null){
+            for (Expr valPair : expr.value){
+                resolve(valPair);
+            }
+        }
+        return null;
+    }
+
+    @Override
     public Void visitAssignExpr(Expr.Assign expr) {
         resolve(expr.value);
         resolveLocal(expr, expr.name);

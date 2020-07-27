@@ -1,8 +1,6 @@
 package com.foxlang.fox;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 import static com.foxlang.fox.TokenType.*;
 
@@ -212,9 +210,28 @@ class Parser {
         return new Stmt.While(condition, body);
     }
 
+    /*
+    * {
+    *   0 -> print(me);
+    *   10 -> print("ME");
+    *   else -> print("me");
+    * }
+    * */
+    //TODO: Experimental
+    private List<Stmt> whenBlock(){
+        List<Stmt> statements = new ArrayList<>();
+
+        while (!check(RIGHT_BRACE) && !isAtEnd()) {
+            statements.add(declaration());
+        }
+
+        consume(RIGHT_BRACE, "Expected '}' after block.");
+        return null;
+    }
+
     private Stmt whenStatement(){
         consume(LEFT_PAREN, "Expected '(' after 'when'.");
-        Expr condition = primary();
+        Expr condition = expression(); //can be primary -> but works for now
         consume(RIGHT_PAREN, "Expected ')' after condition.");
         Expr left = primary();
         consume(ARROW, "Expected '->' after condition");
@@ -495,10 +512,10 @@ class Parser {
     //      | primary ;
     private Expr unary() {
         // We're parsing a unary expression if we find a unary operator
-        if (match(BANG, MINUS)) {
+        if (match(BANG, MINUS, INCREMENT)) {
             Token operator = previous();
             Expr right = unary(); // Right recursion
-            return new Expr.Unary(operator, right);
+            return new Expr.Unary(operator, right, false);
         }
 
         if (match(REF)) {
@@ -515,6 +532,28 @@ class Parser {
         }
 
         // Otherwise, we must have reached the highest level of precedence.
+        return prefix();
+    }
+
+    private Expr prefix() {
+        if (match(INCREMENT, DECREMENT)) {
+            Token operator = previous();
+            Expr right = primary();
+            return new Expr.Unary(operator, right, false);
+        }
+
+        return postfix();
+    }
+
+    private Expr postfix() {
+        if (matchNext(INCREMENT, DECREMENT)) {
+            Token operator = peek();
+            current--;
+            Expr left = primary();
+            advance();
+            return new Expr.Unary(operator, left, true);
+        }
+
         return call();
     }
 
@@ -619,6 +658,33 @@ class Parser {
             return new Expr.Array(values);
         }
 
+        //Dict
+        if (match(LEFT_BRACE)){
+            List<Expr> key = new ArrayList<>();
+            List<Expr> value = new ArrayList<>();
+            Map<Object, Object> map = new HashMap<>();
+            if (match(RIGHT_BRACE)){
+                return new Expr.Dictionary(key, value);
+            }
+            while (!match(RIGHT_BRACE)){
+                Expr keyPair = assignment();
+                consume(ARROW, "Expected Arrow");
+                Expr valPair = assignment();
+                key.add(keyPair);
+                value.add(valPair);
+                int keySize = key.size();
+                int init = 0;
+                while (init < keySize){
+                    map.put(key.get(init), value.get(init));
+                    init++;
+                }
+                if (peek().type != RIGHT_BRACE){
+                    consume(COMMA, "Expected before next");
+                }
+            }
+            return new Expr.Dictionary(key, value);
+        }
+
         // Groupings
         if (match(LEFT_PAREN)) {
             // Get the expression inside the brackets, starting all the way down
@@ -631,6 +697,17 @@ class Parser {
         throw error(peek(), "Expected expression.");
     }
 
+
+    private boolean matchNext(TokenType... types) {
+        for (TokenType type : types) {
+            if (checkNext(type)) {
+                advance();
+                return true;
+            }
+        }
+
+        return false;
+    }
     // Checks if the current token is any of the given types
     private boolean match(TokenType... types) {
         for (TokenType type : types) {

@@ -6,6 +6,7 @@ abstract class Expr {
     interface Visitor<R> {
         R visitAllotExpr(Allot expr);
         R visitArrayExpr(Array expr);
+        R visitDictionaryExpr(Dictionary expr);
         R visitAssignExpr(Assign expr);
         R visitTernaryExpr(Ternary expr);
         R visitBinaryExpr(Binary expr);
@@ -46,6 +47,18 @@ abstract class Expr {
             return visitor.visitArrayExpr(this);
         }
         final List<Expr> values;
+    }
+    static class Dictionary extends Expr {
+        Dictionary(List<Expr> key, List<Expr> value) {
+            this.key = key;
+            this.value = value;
+        }
+
+        <R> R accept(Visitor<R> visitor) {
+            return visitor.visitDictionaryExpr(this);
+        }
+        final List<Expr> key;
+        final List<Expr> value;
     }
     static class Assign extends Expr {
         Assign(Token name, Expr value) {
@@ -226,9 +239,10 @@ abstract class Expr {
         final Token keyword;
     }
     static class Unary extends Expr {
-        Unary(Token operator, Expr right) {
+        Unary(Token operator, Expr right, Boolean postfix) {
             this.operator = operator;
             this.right = right;
+            this.postfix = postfix;
         }
 
         <R> R accept(Visitor<R> visitor) {
@@ -236,6 +250,7 @@ abstract class Expr {
         }
         final Token operator;
         final Expr right;
+        final Boolean postfix;
     }
     static class Variable extends Expr {
         Variable(Token name) {

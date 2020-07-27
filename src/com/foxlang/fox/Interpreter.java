@@ -1,5 +1,7 @@
 package com.foxlang.fox;
 
+import com.sun.jmx.snmp.SnmpNull;
+
 import java.math.BigDecimal;
 import java.util.*;
 
@@ -51,6 +53,46 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             @Override
             public String toString() {
                 return "<native fn>";
+            }
+        });
+
+        globals.define("map", new FoxCallable() {
+            @Override
+            public int arity() {
+                return 2;
+            }
+
+            @Override
+            public Object call(Interpreter interpreter, List<Object> arguments) {
+                Object key = arguments.get(0);
+                Object val = arguments.get(1);
+                Map<Object, Object> map = new HashMap<>();
+                map.put(key, val);
+                return map;
+            }
+
+            @Override
+            public String toString() {
+                return "<native fn>";
+            }
+        });
+
+        globals.define("getMap", new FoxCallable() {
+            @Override
+            public int arity() {
+                return 2;
+            }
+
+            @Override
+            public Object call(Interpreter interpreter, List<Object> arguments) {
+                Object name = arguments.get(0);
+                Object index = arguments.get(1);
+                Object val = null;
+                if(name instanceof Map){
+                    val = ((Map) name).get(index);
+                    return val;
+                }
+                return null;
             }
         });
 
@@ -342,7 +384,9 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                 if (object instanceof List) {
                     return (double) ((List) object).size();
                 }
-
+                if (object instanceof Map){
+                    return ((Map) object).size();
+                }
                 return null;
             }
 
@@ -408,6 +452,32 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             }
         }
         return values;
+    }
+
+    @Override
+    public Object visitDictionaryExpr(Expr.Dictionary expr) {
+        List<Object> key = new ArrayList<>();
+        List<Object> val = new ArrayList<>();
+        HashMap<Object, Object> map = new HashMap<>();
+        List<Object> list = new ArrayList<>();
+        if (expr.key != null) {
+            for (Expr keyPair : expr.key) {
+                key.add(evaluate(keyPair));
+            }
+        }
+        if (expr.value != null){
+            for (Expr valPair : expr.value){
+                val.add(evaluate(valPair));
+            }
+        }
+        int keySize = key.size();
+        int init = 0;
+        while (init < keySize){
+            map.put(key.get(init), val.get(init));
+            init++;
+        }
+        list.add(map);
+        return map;
     }
 
     @Override
@@ -528,6 +598,38 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             case MINUS:
                 checkNumberOperand(expr.operator, right);
                 return -(double)right;
+            case INCREMENT: {
+                if (!(expr.right instanceof Expr.Variable))
+                    throw new RuntimeError(expr.operator,
+                            "Operand of an increment operator must be a variable.");
+
+                checkNumberOperand(expr.operator, right);
+                double value = (double) right;
+                Expr.Variable variable = (Expr.Variable) expr.right;
+                environment.assign(variable.name, value + 1);
+
+                if (expr.postfix) {
+                    return value;
+                } else {
+                    return value + 1;
+                }
+            }
+            case DECREMENT: {
+                if (!(expr.right instanceof Expr.Variable))
+                    throw new RuntimeError(expr.operator,
+                            "Operand of a decrement operator must be a variable.");
+
+                checkNumberOperand(expr.operator, right);
+                double value = (double) right;
+                Expr.Variable variable = (Expr.Variable) expr.right;
+                environment.assign(variable.name, value - 1);
+
+                if (expr.postfix) {
+                    return value;
+                }else {
+                    return value - 1;
+                }
+            }
         }
 
         // Unreachable
@@ -613,6 +715,11 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                     return (double)left + (double)right;
                 }
 
+                /*if (left instanceof Double && right instanceof Token){
+                    left = (double)left + 1;
+                    return left;
+                }*/
+
                 if (left instanceof String && right instanceof String) {
                     return (String)left + (String)right;
                 }
@@ -638,6 +745,10 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             case PERCENTAGE:
                 checkNumberOperands(expr.operator, left, right);
                 return (double)left % (double)right;
+            /*case INCREMENT:
+                right = (double)right + 1;
+                environment.assign(expr.operator, right);
+                return (double) right + 1;*/
         }
 
         // Unreachable
@@ -769,6 +880,8 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         }
         return null;
     }
+
+
 
     /*@Override
     public Object visitWhenExpr(Expr.When expr) {
